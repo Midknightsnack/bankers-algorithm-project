@@ -12,10 +12,21 @@
 #include "customer.h"
 #include "utils.h"
 
-//
+class MutexLock {
+public:
+  MutexLock(pthread_mutex_t* pmutex)
+  : pmutex_(pmutex) {
+    pthread_mutex_lock(pmutex);
+  }
+  ~MutexLock() { pthread_mutex_unlock(pmutex_); }
+
+private:
+  pthread_mutex_t* pmutex_;
+};
+
 pthread_mutex_t mutex_;  // prevents intermingled printing by threads (customers)
-//
-//
+
+
 void run_customer_bank_tests() {
   ext_vector<int> alloc = { 3, 1, 5 };
   
@@ -114,10 +125,16 @@ void* runner(void* param) {           // thread runner
       }
     }
   }
-  //pthread_mutex_lock(&mutex_);
-  std::cout << ">>>>>>>>>>>>>>> Customer thread p#" << c->get_id() << " shutting down... <<<<<<<<<<<<<<<<<\n\n";
+
+  // RAII Resource Acquisition is Initialization (interview question)
+  { MutexLock ml(&mutex_);  // auto-unlocking mutex class
+    if (counter >= MAX_ITERATIONS) {
+      std::cout << "........................................WARNING: COUNTER EXCEEDED: " << counter << "\n";
+    }
+    std::cout << ">>>>>>>>>>>>>>> Customer thread p#" << c->get_id() << " shutting down... <<<<<<<<<<<<<<<<<\n\n";
+  }
+
   b->show();
-  //pthread_mutex_unlock(&mutex_);
 
   pthread_exit(0);
 }
@@ -213,8 +230,9 @@ void process_files(int argc, const char* argv[], Bank*& bank) {    // processes 
     process_file(filename, bank);
 
     if (bank->get_customers().empty()) { std::cerr << "\t\tNo customers found... exiting...\n\n";  exit(1); }
-    //else { bank->show(); }   // TODO: remove this line
     
+    run_simulation(bank);
+    std::cout << "\n";
   }
 }
 
@@ -222,15 +240,12 @@ void process_files(int argc, const char* argv[], Bank*& bank) {    // processes 
 
 int main(int argc, const char * argv[]) {
 //  ext_vector<int>::run_tests();
-  
 //  run_customer_bank_tests();
 
   Bank* bank = nullptr;
 
   verify(argc, argv);
   process_files(argc, argv, bank);
-
-  run_simulation(bank);
 
   std::cout << "\n\t\t...done.\n";
   return 0;

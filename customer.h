@@ -11,6 +11,7 @@
 #include "ext_vector.h"
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
+#include <iomanip>
 
 
 class Bank;
@@ -49,8 +50,20 @@ public:
   }
 
   void show() const {
+    std::string sep = "      ";
+    std::string empty;
+    for (size_t i = 0; i < alloc.size(); ++i){
+      empty += "---";
+    }
+
     pthread_mutex_lock(&mutex_);
-    std::cout << "P#" << idx << "    " << alloc << "    " << max_ << "    " << need << "\n";
+    std::cout << "P#" << std::setw(3) << idx << sep;
+
+    if (needs_met()){
+      std::cout << empty << sep << empty << sep << empty << "\n";
+    } else {
+      std::cout << alloc << sep << " " << max_ << sep << " " << need << "\n";
+    }
     pthread_mutex_unlock(&mutex_);
   }
 

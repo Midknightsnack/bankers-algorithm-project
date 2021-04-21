@@ -62,7 +62,6 @@ public:
   void show() const {
     pthread_mutex_lock(&mutex_);
     std::cout << "available: [" << avail << "]\n";
-    std::cout << "        ALLOCATED   MAXIMUM   NEED\n";
     pthread_mutex_unlock(&mutex_);
     
     for (Customer* c : customers) {
